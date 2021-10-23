@@ -1,6 +1,6 @@
 const { Requester, Validator } = require("@chainlink/external-adapter");
 require("dotenv").config();
-const Twitter = require("twitter");
+const keccak256 = require("keccak256");
 
 // Define custom error scenarios for the API.
 // Return true for the adapter to retry.
@@ -19,18 +19,27 @@ const customParams = {
   endpoint: false,
 };
 
+const checkHash = (initialHash, tweetArray) => {
+  // Map through a list of tweets, returning keccak256 hashed versions
+  const hashesArray = tweetArray.map((item) => {
+    return keccak256(item).toString("hex");
+  });
+
+  // Check if any of the array items matches the initialHash and return bool
+  return hashesArray.includes(initialHash);
+};
+
 const createRequest = (input, callback) => {
   // The Validator helps you validate the Chainlink request data
   const validator = new Validator(callback, input, customParams);
   const jobRunID = validator.validated.id;
-  // const endpoint =
-  //   validator.validated.data.endpoint || "statuses/user_timeline";
   const url = `https://api.twitter.com/1.1/statuses/user_timeline.json`;
   const userid = validator.validated.data.userid;
+  const tweetHash = validator.validated.data.tweetHash || "placeholder";
 
   const params = {
     user_id: userid,
-    count: "1",
+    count: "2",
     exclude_replies: true,
     include_rts: false,
     stringify_ids: true,
@@ -53,9 +62,14 @@ const createRequest = (input, callback) => {
 
   Requester.request(config, customError)
     .then((response) => {
-      const result = response.data.map((obj) => {
+      const tweetArray = response.data.map((obj) => {
         return obj.text;
       });
+      const hashCheck = checkHash(tweetHash, tweetArray);
+      const result = {
+        hashCheck: hashCheck,
+        tweetArray: tweetArray,
+      };
       response.data.result = result;
       callback(response.status, Requester.success(jobRunID, response));
     })
