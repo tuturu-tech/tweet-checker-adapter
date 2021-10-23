@@ -1,3 +1,5 @@
+.env
+.envvrc.example
 node_modules/
 package-lock.json
 *.zip
