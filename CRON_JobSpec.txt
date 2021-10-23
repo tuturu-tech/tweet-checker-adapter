@@ -1,0 +1,12 @@
+type = "cron"
+schemaVersion = 1
+name = ""
+# Repeats the call every 30 seconds
+schedule = "CRON_TZ=UTC */30 * * * * *"
+observationSource = """
+    #Hardcoded values for now
+    my_bridge_task [type = "bridge" name = "twitter-ea" requestData="{\\"data\\":{\\"userid\\": \\"1395461422121984004\\", \\"tweetHash\\": \\"536c3cb79ae5a519c525dca22f9f166e6067b253178557ea579aec649eb5fd0c\\"}}" ]
+
+    my_bridge_task
+"""
+externalJobID = "717b585d-b02b-40cc-8a45-854ba83297c7"
