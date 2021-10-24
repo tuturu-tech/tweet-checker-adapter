@@ -14,36 +14,69 @@ const customError = (data) => {
 // with a Boolean value indicating whether or not they
 // should be required.
 const customParams = {
-  userid: ["userid"],
-  tweetHash: ["tweetHash"],
+  userid: false,
+  tweetHash: false,
+  tweetids: false,
+  count: false,
   endpoint: false,
 };
 
-const checkHash = (initialHash, tweetArray) => {
+const checkHash = (checkUsers, userid, initialHash, tweetArray) => {
   // Map through a list of tweets, returning keccak256 hashed versions
-  const hashesArray = tweetArray.map((item) => {
-    return keccak256(item).toString("hex");
-  });
+  let hashesArray;
 
-  // Check if any of the array items matches the initialHash and return bool
-  return hashesArray.includes(initialHash);
+  if (!checkUsers) {
+    hashesArray = tweetArray.map((item) => {
+      const userAndText = userid.concat(item.text);
+      return keccak256(userAndText).toString("hex");
+    });
+  } else {
+    hashesArray = tweetArray.map((item) => {
+      const userAndText = item.user_id.concat(item.text);
+      return keccak256(userAndText).toString("hex");
+    });
+  }
+
+  let uniqueHashes = [...new Set(hashesArray)];
+  console.log(uniqueHashes);
+
+  // Check if any of the array items matches the initialHash and returns bool
+  return uniqueHashes.includes(initialHash);
 };
 
 const createRequest = (input, callback) => {
   // The Validator helps you validate the Chainlink request data
   const validator = new Validator(callback, input, customParams);
   const jobRunID = validator.validated.id;
-  const url = `https://api.twitter.com/1.1/statuses/user_timeline.json`;
-  const userid = validator.validated.data.userid;
-  const tweetHash = validator.validated.data.tweetHash || "placeholder";
 
-  const params = {
-    user_id: userid,
-    count: "2",
-    exclude_replies: true,
-    include_rts: false,
-    stringify_ids: true,
-  };
+  //Endpoint user_timeline.json is for fetching user timelines
+  //Endpoints show.json and lookup.json are for tweet lookups
+  const endpoint = validator.validated.data.endpoint || "user_timeline.json";
+  const url = `https://api.twitter.com/1.1/statuses/${endpoint}`;
+
+  const userid = validator.validated.data.userid;
+  const tweetHash = validator.validated.data.tweetHash;
+  const count = validator.validated.data.count || "1";
+  const tweetids = validator.validated.data.tweetids;
+
+  let params;
+
+  if (endpoint == "user_timeline.json") {
+    params = {
+      user_id: userid,
+      count: count,
+      exclude_replies: true,
+      include_rts: false,
+      trim_user: true,
+      tweet_mode: "extended",
+      stringify_ids: true,
+    };
+  } else {
+    params = {
+      id: tweetids,
+      trim_user: true,
+    };
+  }
 
   const headers = {
     Authorization: `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
@@ -63,9 +96,20 @@ const createRequest = (input, callback) => {
   Requester.request(config, customError)
     .then((response) => {
       const tweetArray = response.data.map((obj) => {
-        return obj.text;
+        return {
+          user_id: obj.user.id_str,
+          text: obj.full_text,
+        };
       });
-      const hashCheck = checkHash(tweetHash, tweetArray);
+
+      let hashCheck;
+      if (endpoint == "user_timeline.json") {
+        //If we're using the timeline endpoint we don't check the
+        hashCheck = checkHash(false, userid, tweetHash, tweetArray);
+      } else {
+        hashCheck = checkHash(true, tweetHash, tweetArray);
+      }
+
       const result = {
         hashCheck: hashCheck,
         tweetArray: tweetArray,

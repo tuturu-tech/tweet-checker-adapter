@@ -33,12 +33,12 @@ See [Install Locally](#install-locally) for a quickstart
 
 ```json
 {
- "jobRunID": "278c97ffadb54a5bbb93cfec5f7b5503",
- "data": {
-  "USD": 164.02,
-  "result": 164.02
- },
- "statusCode": 200
+  "jobRunID": "278c97ffadb54a5bbb93cfec5f7b5503",
+  "data": {
+    "USD": 164.02,
+    "result": 164.02
+  },
+  "statusCode": 200
 }
 ```
 
@@ -68,8 +68,22 @@ yarn start
 
 ## Call the external adapter/API server
 
+Takes in a userid and a hash and looks up the users' latest tweet, hashes the text and compares it with the inputed hash.
+
 ```bash
-curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "from": "ETH", "to": "USD" } }'
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "userid": "1395461422121984004", "tweetHash": "be3225661372643f19e655841509bb6aaa85c5ae6a3240b5ee0a9f5f3e36b55d", "endpoint": "user_timeline.json" } }'
+```
+
+Takes in a tweet id and fetches the tweet text and author username, hashes it and compares with inputed hash.
+
+```bash
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "tweetids": "1447545650925682696", "tweetHash": "536c3cb79ae5a519c525dca22f9f166e6067b253178557ea579aec649eb5fd0c", "endpoint": "lookup.json" } }'
+```
+
+Same as above but with multiple tweet ids
+
+```bash
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "tweetids": "1447545650925682696,1440043399961219074", "tweetHash": "536c3cb79ae5a519c525dca22f9f166e6067b253178557ea579aec649eb5fd0c", "endpoint": "lookup.json" } }'
 ```
 
 ## Docker
@@ -107,8 +121,8 @@ zip -r external-adapter.zip .
 - Under Function code, select "Upload a .zip file" from the Code entry type drop-down
 - Click Upload and select the `external-adapter.zip` file
 - Handler:
-    - index.handler for REST API Gateways
-    - index.handlerv2 for HTTP API Gateways
+  - index.handler for REST API Gateways
+  - index.handlerv2 for HTTP API Gateways
 - Add the environment variable (repeat for all environment variables):
   - Key: API_KEY
   - Value: Your_API_key
