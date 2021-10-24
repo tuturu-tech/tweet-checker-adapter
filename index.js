@@ -32,7 +32,7 @@ const checkHash = (checkUsers, userid, initialHash, tweetArray) => {
     });
   } else {
     hashesArray = tweetArray.map((item) => {
-      const userAndText = item.user_id.concat(item.text);
+      const userAndText = item.user_id + item.text; //item.user_id.concat(item.text);
       return keccak256(userAndText).toString("hex");
     });
   }
@@ -75,6 +75,7 @@ const createRequest = (input, callback) => {
     params = {
       id: tweetids,
       trim_user: true,
+      tweet_mode: "extended",
     };
   }
 
@@ -107,7 +108,7 @@ const createRequest = (input, callback) => {
         //If we're using the timeline endpoint we don't check the
         hashCheck = checkHash(false, userid, tweetHash, tweetArray);
       } else {
-        hashCheck = checkHash(true, tweetHash, tweetArray);
+        hashCheck = checkHash(true, false, tweetHash, tweetArray);
       }
 
       const result = {
