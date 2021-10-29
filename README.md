@@ -7,13 +7,13 @@ This template provides a basic framework for developing Chainlink external adapt
 Clone this repo and change "ExternalAdapterProject" below to the name of your project
 
 ```bash
-git clone https://github.com/thodges-gh/CL-EA-NodeJS-Template.git ExternalAdapterProject
+git clone https://github.com/tuturu-tech/tweet-checker-adapter Tweet-EA
 ```
 
 Enter into the newly-created directory
 
 ```bash
-cd ExternalAdapterProject
+cd Tweet-EA
 ```
 
 You can remove the existing git history by running:
@@ -26,21 +26,40 @@ See [Install Locally](#install-locally) for a quickstart
 
 ## Input Params
 
-- `base`, `from`, or `coin`: The symbol of the currency to query
-- `quote`, `to`, or `market`: The symbol of the currency to convert to
+- `endpoint`: The endpoint you want to use. Supported enpoints below.
+
+1. User Timeline endpoint: `user_timeline.json`
+
+- `userid`: The id of the Twitter user
+- `tweetHash`: The Keccak256 hash of the tweet text
+- `count`: (optional) The amount of tweets to fetch from the user timeline, starting with the latest one.
+  _Default is 1._
+
+2. Tweet lookup endpoint: `lookup.json`
+
+- `tweetHash`: The Keccak256 hash of the tweet user id + tweet text
+- `tweetids`: An array of tweet ids
 
 ## Output
 
 ```json
 {
-  "jobRunID": "278c97ffadb54a5bbb93cfec5f7b5503",
-  "data": {
-    "USD": 164.02,
-    "result": 164.02
-  },
+  "jobRunID": "9ec03b54-437b-4b69-abe0-a80dcf466b7b",
+  "result": { "hashCheck": true, "tweetArray": [] },
   "statusCode": 200
 }
 ```
+
+## Use external adapter
+
+1. Using the user timeline Job. Must provide userId and tweetHash
+
+- oracle address: 0x521E899DD6c47ea8DcA360Fc46cA41e5A904d28b
+- jobId: 9ec03b54437b4b69abe0a80dcf466b7b
+- fee = 0.1 \* 10 \*\*18
+
+[Contract_Example](Job_Timeline.md)
+[Timeline_Job_Definition](JobSpec.md)
 
 ## Install Locally
 
@@ -66,7 +85,7 @@ Natively run the application (defaults to port 8080):
 yarn start
 ```
 
-## Call the external adapter/API server
+## Call the external adapter/API server locally
 
 Takes in a userid and a hash and looks up the users' latest tweet, hashes the text and compares it with the inputed hash.
 
@@ -77,7 +96,7 @@ curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data 
 Takes in a tweet id and fetches the tweet text and author username, hashes it and compares with inputed hash.
 
 ```bash
-curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "tweetids": "1447545650925682696", "tweetHash": "536c3cb79ae5a519c525dca22f9f166e6067b253178557ea579aec649eb5fd0c", "endpoint": "lookup.json" } }'
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "tweetids": "1447545650925682696", "tweetHash": "be3225661372643f19e655841509bb6aaa85c5ae6a3240b5ee0a9f5f3e36b55d", "endpoint": "lookup.json" } }'
 ```
 
 Same as above but with multiple tweet ids
