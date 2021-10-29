@@ -51,11 +51,17 @@ See [Install Locally](#install-locally) for a quickstart
 1. Using the user timeline Job. Must provide userId and tweetHash
 
 - oracle address: 0x521E899DD6c47ea8DcA360Fc46cA41e5A904d28b
-- jobId: 9ec03b54437b4b69abe0a80dcf466b7b
+- jobId: e5ce0aaf603d4aa2be36b62bb296ce96
 - fee = 0.1 \* 10 \*\*18
 
-[Contract_Example](Job_Timeline.md)
-[Timeline_Job_Definition](JobSpec.md)
+2. Using the tweet Lookup Job. Must provide tweetids and tweetHash
+
+- oracle address: 0x521E899DD6c47ea8DcA360Fc46cA41e5A904d28b
+- jobId: 438fb98017e94736ba2329964c164a6c
+- fee = 0.1 \* 10 \*\*18
+
+[Contract_Example](APIConsumer_example.md)
+[Job_definitions](JobSpec.md)
 
 ## Install Locally
 
