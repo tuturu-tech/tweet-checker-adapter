@@ -77,7 +77,7 @@ curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data 
 Takes in a tweet id and fetches the tweet text and author username, hashes it and compares with inputed hash.
 
 ```bash
-curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "tweetids": "1447545650925682696", "tweetHash": "536c3cb79ae5a519c525dca22f9f166e6067b253178557ea579aec649eb5fd0c", "endpoint": "lookup.json" } }'
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "tweetids": "1447545650925682696", "tweetHash": "536c3cb79ae5a519c525dca22f9f166e6067b253178557ea579aec649eb5fd0c", "endpoint": "tweets?ids=" } }'
 ```
 
 Same as above but with multiple tweet ids

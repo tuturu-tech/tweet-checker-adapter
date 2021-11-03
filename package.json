@@ -13,6 +13,7 @@
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "keccak256": "^1.0.3",
+    "needle": "^3.0.0",
     "twitter": "^1.7.1"
   },
   "devDependencies": {
