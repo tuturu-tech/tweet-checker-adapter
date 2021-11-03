@@ -16,7 +16,7 @@ const customError = (data) => {
 const customParams = {
   //userid: false,
   //tweetHash: false,
-  tweetids: false,
+  ids: false,
   //startTime: false,
   //endTime: false,
   //endpoint: false,
@@ -62,20 +62,17 @@ const createRequest = (input, callback) => {
 
   //const userid = validator.validated.data.userid;
   //const tweetHash = validator.validated.data.tweetHash;
-  const tweetids = validator.validated.data.tweetids;
+  const ids = validator.validated.data.ids;
   //const startTime = validator.validated.data.startTime;
   //const endTime = validator.validated.data.endTime;
 
   let params;
 
   params = {
-    ids: tweetids,
-    "tweet.fields": "author_id",
-    "user.fields": "created_at",
+    ids: "1447545650925682700",
   };
 
   const headers = {
-    "User-Agent": "v2TweetLookupJS",
     authorization: `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
   };
 
@@ -85,6 +82,7 @@ const createRequest = (input, callback) => {
   // method = 'get'
   // headers = 'headers.....'
   const config = {
+    method: "get",
     url,
     params,
     headers,
@@ -112,7 +110,7 @@ const createRequest = (input, callback) => {
         tweetArray: tweetArray,
       };*/
       console.log("Full response data:", response.data);
-      response.data.result = "some result";
+      //response.data.result = "some result";
       callback(response.status, Requester.success(jobRunID, response));
     })
     .catch((error) => {
