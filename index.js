@@ -1,6 +1,7 @@
 const { Requester, Validator } = require("@chainlink/external-adapter");
 require("dotenv").config();
-const keccak256 = require("keccak256");
+//const keccak256 = require("keccak256");
+const ethers = require("ethers");
 
 // Define custom error scenarios for the API.
 // Return true for the adapter to retry.
@@ -25,15 +26,24 @@ const checkHash = (checkUsers, userid, initialHash, tweetArray) => {
   // Map through a list of tweets, returning keccak256 hashed versions
   let hashesArray;
 
+  // Figure out how to use this version for hashing
+  //ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [message]));
+
   if (!checkUsers) {
     hashesArray = tweetArray.map((item) => {
       const userAndText = userid.concat(item.text);
-      return keccak256(userAndText).toString("hex");
+      //return keccak256(userAndText).toString("hex");
+      return ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(["string"], [userAndText])
+      );
     });
   } else {
     hashesArray = tweetArray.map((item) => {
       const userAndText = item.user_id + item.text; //item.user_id.concat(item.text);
-      return keccak256(userAndText).toString("hex");
+      //return keccak256(userAndText).toString("hex");
+      return ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(["string"], [userAndText])
+      );
     });
   }
 
