@@ -70,6 +70,14 @@ yarn start
 
 Takes in a userid and a hash and looks up the users' latest tweet, hashes the text and compares it with the inputed hash.
 
+```
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"tweetIds": "1278747501642657792,1255542774432063488", "endpoint": "TweetLookup" } }'
+```
+
+```
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"userId": "1395461422121984004", "endpoint": "UserTimeline" } }'
+```
+
 ```bash
 curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": { "userid": "1395461422121984004", "tweetHash": "be3225661372643f19e655841509bb6aaa85c5ae6a3240b5ee0a9f5f3e36b55d", "endpoint": "user_timeline.json" } }'
 ```

@@ -1,6 +1,11 @@
 const { Requester, Validator } = require("@chainlink/external-adapter");
 require("dotenv").config();
 const keccak256 = require("keccak256");
+const needle = require("needle");
+
+const token = process.env.TWITTER_BEARER_TOKEN;
+
+//const endpointURL = "https://api.twitter.com/2/tweets?ids=";
 
 // Define custom error scenarios for the API.
 // Return true for the adapter to retry.
@@ -9,113 +14,67 @@ const customError = (data) => {
   return false;
 };
 
-// Define custom parameters to be used by the adapter.
-// Extra parameters can be stated in the extra object,
-// with a Boolean value indicating whether or not they
-// should be required.
 const customParams = {
-  //userid: false,
-  //tweetHash: false,
-  ids: false,
-  //startTime: false,
-  //endTime: false,
-  //endpoint: false,
+  tweetIds: false,
+  endpoint: false,
+  userId: false,
+  endTime: false,
+  startTime: false,
 };
 
-/*
-const checkHash = (checkUsers, userid, initialHash, tweetArray) => {
-  // Map through a list of tweets, returning keccak256 hashed versions
-  let hashesArray;
-
-  if (!checkUsers) {
-    hashesArray = tweetArray.map((item) => {
-      const userAndText = userid.concat(item.text);
-      return keccak256(userAndText).toString("hex");
-    });
-  } else {
-    hashesArray = tweetArray.map((item) => {
-      const userAndText = item.user_id.concat(item.text);
-      return keccak256(userAndText).toString("hex");
-    });
-  }
-
-  let uniqueHashes = [...new Set(hashesArray)];
-  console.log(uniqueHashes);
-
-  // Check if any of the array items matches the initialHash and returns bool
-  return uniqueHashes.includes(initialHash);
-};
-*/
-
-const createRequest = (input, callback) => {
-  // The Validator helps you validate the Chainlink request data
+const createRequest = async (input, callback) => {
   const validator = new Validator(callback, input, customParams);
   const jobRunID = validator.validated.id;
 
-  //Endpoint user_timeline.json is for fetching user timelines
-  //Endpoints are: tweets?ids= for Tweet ids
-  //               users/${userId}/tweets for user timelines
-  //const endpoint =
-  //  validator.validated.data.endpoint || `users/${userid}/tweets`;
-  //const url = `https://api.twitter.com/2/${endpoint}`;
-  const url = `https://api.twitter.com/2/tweets?ids=`;
-
-  //const userid = validator.validated.data.userid;
-  //const tweetHash = validator.validated.data.tweetHash;
-  const ids = validator.validated.data.ids;
-  //const startTime = validator.validated.data.startTime;
-  //const endTime = validator.validated.data.endTime;
-
   let params;
+  let endpointURL;
+  const tweetIds = validator.validated.data.tweetIds;
+  const endpoint = validator.validated.data.endpoint;
+  const userId = validator.validated.data.userId;
+  const endTime = validator.validated.data.endTime || "2021-10-30T00:00:01Z";
+  const startTime =
+    validator.validated.data.startTime || "2021-10-25T00:00:01Z";
 
-  params = {
-    ids: "1447545650925682700",
-  };
+  if (endpoint == "TweetLookup") {
+    endpointURL = `https://api.twitter.com/2/tweets?ids=`;
+    params = {
+      ids: tweetIds, // Edit Tweet IDs to look up
+      "tweet.fields": "author_id", // Edit optional query parameters here
+      "user.fields": "created_at", // Edit optional query parameters here
+    };
+  } else if (endpoint == "UserTimeline") {
+    endpointURL = `https://api.twitter.com/2/users/${userId}/tweets`;
+    params = {
+      max_results: 5,
+      exclude: "retweets,replies",
+      start_time: startTime,
+      end_time: endTime,
+    };
+  } else {
+    throw new Error("Unsuccessful request");
+  }
 
-  const headers = {
-    authorization: `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
-  };
+  // this is the HTTP header that adds bearer token authentication
+  const res = await needle("get", endpointURL, params, {
+    headers: {
+      //"User-Agent": "v2TweetLookupJS",
+      authorization: `Bearer ${token}`,
+    },
+  });
 
-  // This is where you would add method and headers
-  // you can add method like GET or POST and add it to the config
-  // The default is GET requests
-  // method = 'get'
-  // headers = 'headers.....'
-  const config = {
-    method: "get",
-    url,
-    params,
-    headers,
-  };
-
-  Requester.request(config, customError)
-    .then((response) => {
-      /*const tweetArray = response.data.map((obj) => {
-        return {
-          user_id: obj.user.id_str,
-          text: obj.full_text,
-        };
-      });
-*/
-      //let hashCheck;
-      /*if (endpoint == "user_timeline.json") {
-        //If we're using the timeline endpoint we don't check the
-        hashCheck = checkHash(false, userid, tweetHash, tweetArray);
-      } else {
-        hashCheck = checkHash(true, tweetHash, tweetArray);
-      }
-
-      const result = {
-        hashCheck: hashCheck,
-        tweetArray: tweetArray,
-      };*/
-      console.log("Full response data:", response.data);
-      //response.data.result = "some result";
-      callback(response.status, Requester.success(jobRunID, response));
-    })
-    .catch((error) => {
-      callback(500, Requester.errored(jobRunID, error));
+  if (res.body) {
+    const arr = res.body.data.map((obj) => {
+      return obj.text;
     });
+    res.body.data.result = arr;
+    res.body.status = 200;
+    callback(200, Requester.success(jobRunID, res.body));
+    //console.log(res.body);
+    return res.body;
+  } else {
+    callback(500, Requester.errored(jobRunID, error));
+    //throw new Error("Unsuccessful request");
+  }
 };
 
 // This is a wrapper to allow the function to work with
