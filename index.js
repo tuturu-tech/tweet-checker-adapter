@@ -3,6 +3,7 @@ require("dotenv").config();
 const keccak256 = require("keccak256");
 const ethers = require("ethers");
 const needle = require("needle");
+const cbor = require("cbor");
 
 const token = process.env.TWITTER_BEARER_TOKEN;
 
@@ -16,33 +17,48 @@ const customError = (data) => {
 };
 
 const customParams = {
+  data: false,
   tweetIds: false,
   endpoint: false,
-  userId: false,
-  endTime: false,
-  startTime: false,
-  tweetHash: false,
 };
+
+const decodeData = (data) => {
+  const decodedData = ethers.utils.defaultAbiCoder.decode(
+    [
+      "uint256 taskId",
+      "tuple(uint8 status, uint8 platform, address sponsor, address promoter, uint256 promoterUserId, address erc20Token, uint256 depositAmount, uint256 timeWindowStart, uint256 timeWindowEnd, uint256 persistanceDuration, bytes32 taskHash)",
+    ],
+    data
+  );
+
+  return decodedData;
+};
+
+const unixToISO = (date) => {
+  let unixDate = date;
+  let newDate = new Date(unixDate * 1000);
+  return newDate.toISOString().split(".")[0] + "Z";
+};
+/*
+let testData =
+  "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000005b38da6a701c568545dcfcb03fcb875f56beddc40000000000000000000000005b38da6a701c568545dcfcb03fcb875f56beddc400000000000000000000000000000000000000000000000000000000000000010000000000000000000000005b38da6a701c568545dcfcb03fcb875f56beddc4000000000000000000000000000000000000000000000000016345785d8a00000000000000000000000000000000000000000000000000000000000061869ef4000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000016173640000000000000000000000000000000000000000000000000000000000";
+console.log(decodeData(testData));*/
 
 const hashCheck = (checkUsers, userid, initialHash, tweetArray) => {
   // Map through a list of tweets, returning keccak256 hashed versions
   let hashesArray;
 
-  // Figure out how to use this version for hashing
-  //ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [message]));
-
   if (!checkUsers) {
     hashesArray = tweetArray.map((item) => {
-      const userAndText = userid.concat(item.text);
-      //return keccak256(userAndText).toString("hex");
+      const userAndText = userid + item.text;
+      console.log("ConcatText: ", userAndText);
       return ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(["string"], [userAndText])
       );
     });
   } else {
     hashesArray = tweetArray.map((item) => {
-      const userAndText = item.id + item.text; //item.user_id.concat(item.text);
-      //return keccak256(userAndText).toString("hex");
+      const userAndText = item.id + item.text;
       return ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(["string"], [userAndText])
       );
@@ -60,16 +76,26 @@ const createRequest = async (input, callback) => {
   const validator = new Validator(callback, input, customParams);
   const jobRunID = validator.validated.id;
 
-  let params;
-  let endpointURL;
-  let hashUserId;
+  const data = validator.validated.data.data;
+  console.log("CBOR Decode ", cbor.decodeAll(data));
+  const decodedData = decodeData(data);
+
+  let params, endpointURL, hashUserId, unixStartDate, unixEndDate;
   const tweetIds = validator.validated.data.tweetIds;
   const endpoint = validator.validated.data.endpoint;
-  const userId = validator.validated.data.userId;
-  const endTime = validator.validated.data.endTime || "2021-10-30T00:00:01Z";
-  const startTime =
-    validator.validated.data.startTime || "2021-10-25T00:00:01Z";
-  const tweetHash = validator.validated.data.tweetHash;
+  const taskId = decodedData[0].toString();
+  const userId = decodedData[1].promoterUserId.toString();
+  unixEndDate = decodedData[1].timeWindowEnd.toNumber();
+  unixStartDate = decodedData[1].timeWindowStart.toNumber();
+  const tweetHash = decodedData[1].taskHash;
+
+  const startTime = unixToISO(unixStartDate);
+  const endTime = unixToISO(unixEndDate);
+  console.log("userId: ", userId);
+  console.log("startDate: ", startTime);
+  console.log("endDate: ", endTime);
+  console.log("tweetHash: ", tweetHash);
+  console.log("taskId:", taskId);
 
   if (endpoint == "TweetLookup") {
     endpointURL = `https://api.twitter.com/2/tweets?ids=`;
@@ -102,14 +128,14 @@ const createRequest = async (input, callback) => {
 
   if (res.body) {
     const tweetArr = res.body.data.map((obj) => {
-      return obj.text;
+      return obj;
     });
 
     const hashCheckPassed = hashCheck(hashUserId, userId, tweetHash, tweetArr);
     console.log("Initial tweet Hash:", tweetHash);
 
     res.body.data.result = {
-      tweets: tweetArr,
+      taskId: taskId,
       hashCheckPassed: hashCheckPassed,
     };
 
