@@ -17,12 +17,18 @@ const customError = (data) => {
 };
 
 const customParams = {
-  data: false,
+  taskId: false,
+  promoterId: false,
+  timeWindowStart: false,
+  timeWindowEnd: false,
+  duration: false,
+  taskHash: false,
   tweetIds: false,
   endpoint: false,
 };
 
-const decodeData = (data) => {
+/*const decodeData = (data) => {
+  console.log("This is the data received:", data);
   const decodedData = ethers.utils.defaultAbiCoder.decode(
     [
       "uint256 taskId",
@@ -32,16 +38,16 @@ const decodeData = (data) => {
   );
 
   return decodedData;
-};
+};*/
 
 const unixToISO = (date) => {
   let unixDate = date;
   let newDate = new Date(unixDate * 1000);
   return newDate.toISOString().split(".")[0] + "Z";
 };
-/*
-let testData =
-  "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000005b38da6a701c568545dcfcb03fcb875f56beddc40000000000000000000000005b38da6a701c568545dcfcb03fcb875f56beddc400000000000000000000000000000000000000000000000000000000000000010000000000000000000000005b38da6a701c568545dcfcb03fcb875f56beddc4000000000000000000000000000000000000000000000000016345785d8a00000000000000000000000000000000000000000000000000000000000061869ef4000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000016173640000000000000000000000000000000000000000000000000000000000";
+
+/*let testData =
+  "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000aac1d92e356144c6b3032297df02897f273c898c000000000000000000000000b498e4a7e01adbbfd5ce0ea5bc67eb208cd5f1dc000000000000000000000000000000000000000000000000135dacc51b57a0040000000000000000000000005df53ca9fa3cd2ddd76261fde51f5578286189ab0000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000000006186b5cf0000000000000000000000000000000000000000000000000000000061895c95000000000000000000000000000000000000000000000000000000000000000183da950bf0a928aed2c5167ac121d7d59ac9e0a0efa3f4e54ff94218ca6a6a8f";
 console.log(decodeData(testData));*/
 
 const hashCheck = (checkUsers, userid, initialHash, tweetArray) => {
@@ -76,18 +82,19 @@ const createRequest = async (input, callback) => {
   const validator = new Validator(callback, input, customParams);
   const jobRunID = validator.validated.id;
 
-  const data = validator.validated.data.data;
-  console.log("CBOR Decode ", cbor.decodeAll(data));
-  const decodedData = decodeData(data);
+  //const data = validator.validated.data.data;
+  //console.log("data: ", data);
+  //console.log("CBOR Decode ", cbor.decodeAll(data));
+  //const decodedData = decodeData(data);
 
   let params, endpointURL, hashUserId, unixStartDate, unixEndDate;
   const tweetIds = validator.validated.data.tweetIds;
   const endpoint = validator.validated.data.endpoint;
-  const taskId = decodedData[0].toString();
-  const userId = decodedData[1].promoterUserId.toString();
-  unixEndDate = decodedData[1].timeWindowEnd.toNumber();
-  unixStartDate = decodedData[1].timeWindowStart.toNumber();
-  const tweetHash = decodedData[1].taskHash;
+  const taskId = validator.validated.data.taskId; //decodedData[0].toString();
+  const userId = validator.validated.data.promoterId; //decodedData[1].promoterUserId.toString();
+  unixEndDate = validator.validated.data.timeWindowEnd; //decodedData[1].timeWindowEnd.toNumber();
+  unixStartDate = validator.validated.data.timeWindowStart; //decodedData[1].timeWindowStart.toNumber();
+  const tweetHash = validator.validated.data.taskHash; //decodedData[1].taskHash;
 
   const startTime = unixToISO(unixStartDate);
   const endTime = unixToISO(unixEndDate);
@@ -127,6 +134,7 @@ const createRequest = async (input, callback) => {
   });
 
   if (res.body) {
+    console.log("Resbody", res.body);
     const tweetArr = res.body.data.map((obj) => {
       return obj;
     });

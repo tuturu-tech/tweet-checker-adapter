@@ -45,3 +45,54 @@ observationSource = """
 
     decode_log -> decode_cbor -> fetch -> parse -> encode_data -> encode_tx -> submit_tx
 """
+
+
+type = "directrequest"
+schemaVersion = 1
+name = "twitterV2-TimelineMulti"
+contractAddress = "0x521E899DD6c47ea8DcA360Fc46cA41e5A904d28b"
+maxTaskDuration = "0s"
+observationSource = """
+    decode_log   [type=ethabidecodelog
+                  abi="OracleRequest(bytes32 indexed specId, address requester, bytes32 requestId, uint256 payment, address callbackAddr, bytes4 callbackFunctionId, uint256 cancelExpiration, uint256 dataVersion, bytes data)"
+                  data="$(jobRun.logData)"
+                  topics="$(jobRun.logTopics)"]
+
+    decode_cbor  [type=cborparse data="$(decode_log.data)"]
+    fetch        [type=bridge name= "twitter-ea" method=GET requestData="{\\"id\\": $(jobSpec.externalJobID), \\"data\\": {\\"taskId\\": $(decode_cbor.taskId),\\"promoterId\\": $(decode_cbor.promoterId),\\"timeWindowStart\\": $(decode_cbor.timeWindowStart),\\"timeWindowEnd\\": $(decode_cbor.timeWindowEnd),\\"duration\\": $(decode_cbor.duration),\\"taskHash\\": $(decode_cbor.taskHash), \\"endpoint\\": \\"UserTimeline\\"}}"]
+    parse        [type=jsonparse path="" data="$(fetch)"]
+    encode_data  [type=ethabiencode abi="(bytes32 requestId, uint256 taskId, bool success)" data="{\\"requestId\\": $(decode_log.requestId), \\"taskId\\": $(parse.taskId), \\"success\\": $(parse.hashCheckPassed) }"]
+    encode_tx    [type=ethabiencode
+                  abi="fulfillOracleRequest2(bytes32 requestId, uint256 payment, address callbackAddress, bytes4 callbackFunctionId, uint256 expiration, bytes calldata data)"
+                  data="{\\"requestId\\": $(decode_log.requestId), \\"payment\\": $(decode_log.payment), \\"callbackAddress\\": $(decode_log.callbackAddr), \\"callbackFunctionId\\": $(decode_log.callbackFunctionId), \\"expiration\\": $(decode_log.cancelExpiration), \\"data\\": $(encode_data)}"
+                 ]
+    submit_tx    [type=ethtx to="0x521E899DD6c47ea8DcA360Fc46cA41e5A904d28b" data="$(encode_tx)"]
+
+    decode_log -> decode_cbor -> fetch -> parse -> encode_data -> encode_tx -> submit_tx
+"""
+
+# With operator.sol
+
+type = "directrequest"
+schemaVersion = 1
+name = "twitterV2-TimelineMulti2"
+contractAddress = "0xDe2Fa809f8E0c702983C846Becd044c24B86C3EE"
+maxTaskDuration = "0s"
+observationSource = """
+    decode_log   [type=ethabidecodelog
+                  abi="OracleRequest(bytes32 indexed specId, address requester, bytes32 requestId, uint256 payment, address callbackAddr, bytes4 callbackFunctionId, uint256 cancelExpiration, uint256 dataVersion, bytes data)"
+                  data="$(jobRun.logData)"
+                  topics="$(jobRun.logTopics)"]
+
+    decode_cbor  [type=cborparse data="$(decode_log.data)"]
+    fetch        [type=bridge name= "twitter-ea" method=GET requestData="{\\"id\\": $(jobSpec.externalJobID), \\"data\\": {\\"taskId\\": $(decode_cbor.taskId),\\"promoterId\\": $(decode_cbor.promoterId),\\"timeWindowStart\\": $(decode_cbor.timeWindowStart),\\"timeWindowEnd\\": $(decode_cbor.timeWindowEnd),\\"duration\\": $(decode_cbor.duration),\\"taskHash\\": $(decode_cbor.taskHash), \\"endpoint\\": \\"UserTimeline\\"}}"]
+    parse        [type=jsonparse path="" data="$(fetch)"]
+    encode_data  [type=ethabiencode abi="(bytes32 requestId, uint256 taskId, bool success)" data="{\\"requestId\\": $(decode_log.requestId), \\"taskId\\": $(parse.taskId), \\"success\\": $(parse.hashCheckPassed) }"]
+    encode_tx    [type=ethabiencode
+                  abi="fulfillOracleRequest2(bytes32 requestId, uint256 payment, address callbackAddress, bytes4 callbackFunctionId, uint256 expiration, bytes calldata data)"
+                  data="{\\"requestId\\": $(decode_log.requestId), \\"payment\\": $(decode_log.payment), \\"callbackAddress\\": $(decode_log.callbackAddr), \\"callbackFunctionId\\": $(decode_log.callbackFunctionId), \\"expiration\\": $(decode_log.cancelExpiration), \\"data\\": $(encode_data)}"
+                 ]
+    submit_tx    [type=ethtx to="0xDe2Fa809f8E0c702983C846Becd044c24B86C3EE" data="$(encode_tx)"]
+
+    decode_log -> decode_cbor -> fetch -> parse -> encode_data -> encode_tx -> submit_tx
+"""
