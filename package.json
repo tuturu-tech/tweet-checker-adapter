@@ -10,13 +10,17 @@
   },
   "dependencies": {
     "@chainlink/external-adapter": "^0.2.3",
-    "cbor": "^8.0.2",
+    "axios": "^0.21.2",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "ethers": "^5.5.1",
+    "glob-parent": "^5.1.2",
+    "hosted-git-info": "^2.8.9",
     "keccak256": "^1.0.3",
+    "lodash": "^4.17.21",
     "needle": "^3.0.0",
-    "twitter": "^1.7.1"
+    "twitter": "^1.7.1",
+    "y18n": "^4.0.1"
   },
   "devDependencies": {
     "body-parser": "^1.19.0",

@@ -3,7 +3,6 @@ require("dotenv").config();
 const keccak256 = require("keccak256");
 const ethers = require("ethers");
 const needle = require("needle");
-const cbor = require("cbor");
 
 const token = process.env.TWITTER_BEARER_TOKEN;
 
