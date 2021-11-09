@@ -91,13 +91,34 @@ yarn start
 
 Takes in a userid and a hash and looks up the users' latest tweet, hashes the text and compares it with the inputed hash.
 
-```bash
-curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"data": "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000005b38da6a701c568545dcfcb03fcb875f56beddc40000000000000000000000005b38da6a701c568545dcfcb03fcb875f56beddc4000000000000000000000000000000000000000000000000135dacc51b57a0040000000000000000000000005b38da6a701c568545dcfcb03fcb875f56beddc4000000000000000000000000000000000000000000000000016345785d8a0000000000000000000000000000000000000000000000000000000000005fa57452000000000000000000000000000000000000000000000000000000006186a7f900000000000000000000000000000000000000000000000000000000000000016173640000000000000000000000000000000000000000000000000000000000", "endpoint": "UserTimeline" } }'
-```
-
-"1","0xB498e4A7E01ADbBfd5Ce0Ea5bC67eB208cd5f1dC","1395461422121984004","0x1514b9858A6B8Bf18D09Aee4080b8382c2E66670","1000000000000000000","1636218319","1636392085","1","0x83da950bf0a928aed2c5167ac121d7d59ac9e0a0efa3f4e54ff94218ca6a6a8f"
+Task creation for testing purposes:
+"1","0xB498e4A7E01ADbBfd5Ce0Ea5bC67eB208cd5f1dC","1395461422121984004","0x62a2BA2cf2DeAabA6CdBF4E49765575d13Fc6083","1000000000000000000","1634218319","1638392085","1","0x83da950bf0a928aed2c5167ac121d7d59ac9e0a0efa3f4e54ff94218ca6a6a8f"
 
 Takes in a tweet id and fetches the tweet text and author username, hashes it and compares with inputed hash.
+
+SUCCESS
+
+```bash
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"taskId": "0", "promoterId": "1395461422121984004", "timeWindowStart": "1634218319", "timeWindowEnd": "1638392085", "taskHash": "0xbe611fa9e3a341d1f59df049685fb42c9d7d2dadc0765019c5490335f21f9818", "endpoint": "UserTimeline" } }'
+```
+
+FAIL
+
+```bash
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"taskId": "0", "promoterId": "1395461422121984004", "timeWindowStart": "1637218319", "timeWindowEnd": "1638392085", "taskHash": "0xbe611fa9e3a341d1f59df049685fb42c9d7d2dadc0765019c5490335f21f9818", "endpoint": "UserTimeline" } }'
+```
+
+NO START TIME
+
+```bash
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"taskId": "0", "promoterId": "1395461422121984004", "timeWindowEnd": "1638392085", "taskHash": "0xbe611fa9e3a341d1f59df049685fb42c9d7d2dadc0765019c5490335f21f9818", "endpoint": "UserTimeline" } }'
+```
+
+WRONG ENDPOINT
+
+```bash
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"taskId": "0", "promoterId": "1395461422121984004", "timeWindowEnd": "1638392085", "taskHash": "0xbe611fa9e3a341d1f59df049685fb42c9d7d2dadc0765019c5490335f21f9818", "endpoint": "something" } }'
+```
 
 ```bash
 curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"tweetIds": "1278747501642657792,1255542774432063488", "tweetHash": "0xbe611fa9e3a341d1f59df049685fb42c9d7d2dadc0765019c5490335f21f9818", "endpoint": "TweetLookup" } }'
