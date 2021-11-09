@@ -31,7 +31,6 @@ const unixToISO = (date) => {
 };
 
 const hashCheck = (checkUsers, userid, initialHash, tweetArray) => {
-  // Map through a list of tweets, returning keccak256 hashed versions
   let hashesArray;
 
   if (!checkUsers) {
@@ -52,7 +51,6 @@ const hashCheck = (checkUsers, userid, initialHash, tweetArray) => {
   }
 
   let uniqueHashes = [...new Set(hashesArray)];
-  console.log("Hashes of tweets:", hashesArray);
 
   // Check if any of the array items matches the initialHash and returns bool
   return uniqueHashes.includes(initialHash);
@@ -77,12 +75,6 @@ const createRequest = async (input, callback) => {
   const userId = dataObject.promoterId;
   const tweetHash = dataObject.taskHash;
   //const tweetIds = dataObject.tweetIds;
-
-  console.log("userId: ", userId);
-  console.log("startDate: ", startTime);
-  console.log("endDate: ", endTime);
-  console.log("tweetHash: ", tweetHash);
-  console.log("taskId:", taskId);
 
   const failedResult = {
     status: 500,
