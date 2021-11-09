@@ -96,6 +96,15 @@ Task creation for testing purposes:
 
 Takes in a tweet id and fetches the tweet text and author username, hashes it and compares with inputed hash.
 
+{
+"promoterId": "1395461422121984004",
+"taskHash": "0xbe611fa9e3a341d1f59df049685fb42c9d7d2dadc0765019c5490335f21f9818"
+}
+
+```bash
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"taskId": "0", "timeWindowStart": "1634218319", "timeWindowEnd": "1638392085", "data": { "promoterId": "1395461422121984004","taskHash": "0xbe611fa9e3a341d1f59df049685fb42c9d7d2dadc0765019c5490335f21f9818" }, "endpoint": "UserTimeline" } }'
+```
+
 SUCCESS
 
 ```bash

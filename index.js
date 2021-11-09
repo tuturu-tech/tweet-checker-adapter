@@ -17,12 +17,10 @@ const customError = (data) => {
 
 const customParams = {
   taskId: false,
-  promoterId: false,
   timeWindowStart: false,
   timeWindowEnd: false,
   duration: false,
-  taskHash: false,
-  tweetIds: false,
+  data: false,
   endpoint: false,
 };
 
@@ -66,18 +64,20 @@ const createRequest = async (input, callback) => {
 
   const minStartTime = 1636489239;
   const maxEndTime = 1920486039;
-
   let params, endpointURL, hashUserId, unixStartDate, unixEndDate;
-  const tweetIds = validator.validated.data.tweetIds;
-  const endpoint = validator.validated.data.endpoint;
-  const taskId = validator.validated.data.taskId; //decodedData[0].toString();
-  const userId = validator.validated.data.promoterId; //decodedData[1].promoterUserId.toString();
-  unixStartDate = validator.validated.data.timeWindowStart || maxEndTime; //decodedData[1].timeWindowStart.toNumber();
-  unixEndDate = validator.validated.data.timeWindowEnd || minStartTime; //decodedData[1].timeWindowEnd.toNumber();
-  const tweetHash = validator.validated.data.taskHash; //decodedData[1].taskHash;
 
+  const taskId = validator.validated.data.taskId;
+  unixStartDate = validator.validated.data.timeWindowStart || maxEndTime;
+  unixEndDate = validator.validated.data.timeWindowEnd || minStartTime;
   const startTime = unixToISO(unixStartDate);
   const endTime = unixToISO(unixEndDate);
+  const endpoint = validator.validated.data.endpoint;
+  const dataObject = validator.validated.data.data;
+
+  const userId = dataObject.promoterId;
+  const tweetHash = dataObject.taskHash;
+  //const tweetIds = dataObject.tweetIds;
+
   console.log("userId: ", userId);
   console.log("startDate: ", startTime);
   console.log("endDate: ", endTime);
