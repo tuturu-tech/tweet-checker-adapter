@@ -6,7 +6,6 @@ const hashCheck = (checkUsers, userid, initialHash, tweetArray) => {
   if (!checkUsers) {
     hashesArray = tweetArray.map((item) => {
       const userAndText = userid + item.text;
-      console.log("ConcatText: ", userAndText);
       return ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(["string"], [userAndText])
       );
@@ -21,6 +20,7 @@ const hashCheck = (checkUsers, userid, initialHash, tweetArray) => {
   }
 
   let uniqueHashes = [...new Set(hashesArray)];
+  console.log(uniqueHashes);
 
   // Check if any of the array items matches the initialHash and returns bool
   return uniqueHashes.includes(initialHash);

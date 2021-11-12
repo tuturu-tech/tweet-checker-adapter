@@ -66,7 +66,6 @@ const createRequest = async (input, callback) => {
       data: {
         result: {
           taskId: taskId,
-          hashCheckPassed: false,
           responseStatus: 2, // Error
           score: "",
         },
@@ -112,7 +111,6 @@ const createRequest = async (input, callback) => {
           data: {
             result: {
               taskId: taskId,
-              hashCheckPassed: false,
               responseStatus: 0, // INVALID
               score: "",
             },
@@ -136,8 +134,7 @@ const createRequest = async (input, callback) => {
 
       res.body.data.result = {
         taskId: taskId,
-        hashCheckPassed: hashCheckPassed,
-        responseStatus: 1, // SUCCESS
+        responseStatus: hashCheckPassed ? 1 : 0,
         status: res.body.data[0].public_metrics[metric],
       };
 
