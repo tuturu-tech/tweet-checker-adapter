@@ -1,8 +1,8 @@
 const { Requester, Validator } = require("@chainlink/external-adapter");
 require("dotenv").config();
-const keccak256 = require("keccak256");
-const ethers = require("ethers");
 const needle = require("needle");
+
+const hashCheck = require("./Functions/hashCheck");
 
 const token = process.env.TWITTER_BEARER_TOKEN;
 const moralisAppId = process.env.MORALIS_APP_ID;
@@ -32,98 +32,125 @@ const unixToISO = (date) => {
   return newDate.toISOString().split(".")[0] + "Z";
 };
 
-const hashCheck = (checkUsers, userid, initialHash, tweetArray) => {
-  let hashesArray;
-
-  if (!checkUsers) {
-    hashesArray = tweetArray.map((item) => {
-      const userAndText = userid + item.text;
-      console.log("ConcatText: ", userAndText);
-      return ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(["string"], [userAndText])
-      );
-    });
-  } else {
-    hashesArray = tweetArray.map((item) => {
-      const userAndText = item.id + item.text;
-      return ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(["string"], [userAndText])
-      );
-    });
-  }
-
-  let uniqueHashes = [...new Set(hashesArray)];
-
-  // Check if any of the array items matches the initialHash and returns bool
-  return uniqueHashes.includes(initialHash);
-};
-
 const createRequest = async (input, callback) => {
   const validator = new Validator(callback, input, customParams);
   const jobRunID = validator.validated.id;
 
+  let params,
+    endpointURL,
+    hashUserId,
+    unixStartDate,
+    unixEndDate,
+    res,
+    failedResult;
+  const dataObject = validator.validated.data.data;
+  const platform = dataObject.platform;
+  const metric = dataObject.metric;
+
+  // All tasks have these field in common
+  const taskId = validator.validated.data.taskId;
   const minStartTime = 1636489239;
   const maxEndTime = 1920486039;
-  let params, endpointURL, hashUserId, unixStartDate, unixEndDate;
-
-  const taskId = validator.validated.data.taskId;
   unixStartDate = validator.validated.data.timeWindowStart || maxEndTime;
   unixEndDate = validator.validated.data.timeWindowEnd || minStartTime;
   const startTime = unixToISO(unixStartDate);
   const endTime = unixToISO(unixEndDate);
   const endpoint = validator.validated.data.endpoint;
-  const dataObject = validator.validated.data.data;
 
-  const userId = dataObject.promoterId;
-  const tweetHash = dataObject.taskHash;
-  //const tweetIds = dataObject.tweetIds;
+  if (platform == "Twitter") {
+    const tweetHash = dataObject.taskHash;
+    let userId, tweetIds;
 
-  const failedResult = {
-    status: 500,
-    data: {
-      result: {
-        taskId: taskId,
-        hashCheckPassed: false,
-        callSuccess: false,
-        message: "",
-        likes: "",
-        retweets: "",
-        replies: "",
+    failedResult = {
+      status: 500,
+      data: {
+        result: {
+          taskId: taskId,
+          hashCheckPassed: false,
+          responseStatus: 2, // Error
+          score: "",
+        },
       },
-    },
-  };
+    };
 
-  if (endpoint == "Discord") {
-    const res = await needle("get", moralisServerUrl, {
+    if (endpoint == "TweetLookup") {
+      tweetIds = dataObject.tweetIds;
+      endpointURL = `https://api.twitter.com/2/tweets?ids=`;
+      hashUserId = true;
+      params = {
+        ids: tweetIds, // Edit Tweet IDs to look up
+        "tweet.fields": "author_id", // Edit optional query parameters here
+        "user.fields": "created_at", // Edit optional query parameters here
+      };
+    } else if (endpoint == "UserTimeline") {
+      userId = dataObject.promoterId;
+      endpointURL = `https://api.twitter.com/2/users/${userId}/tweets`;
+      hashUserId = false;
+      params = {
+        exclude: "retweets,replies",
+        start_time: startTime,
+        end_time: endTime,
+        "tweet.fields": "public_metrics",
+      };
+    } else {
+      callback(200, Requester.success(jobRunID, failedResult));
+      return failedResult;
+    }
+
+    // this is the HTTP header that adds bearer token authentication
+    res = await needle("get", endpointURL, params, {
       headers: {
-        "X-Parse-Application-Id": moralisAppId,
-        "X-Parse-REST-API-Key": "undefined",
+        authorization: `Bearer ${token}`,
       },
     });
 
-    console.log("Moralis result:", res);
-  }
+    if (res.body) {
+      console.log("Resbody", res.body.data);
+      if (!res.body.data) {
+        res.body = {
+          status: 200,
+          data: {
+            result: {
+              taskId: taskId,
+              hashCheckPassed: false,
+              responseStatus: 0, // INVALID
+              score: "",
+            },
+          },
+        };
 
-  if (endpoint == "TweetLookup") {
-    endpointURL = `https://api.twitter.com/2/tweets?ids=`;
-    hashUserId = true;
-    params = {
-      ids: tweetIds, // Edit Tweet IDs to look up
-      "tweet.fields": "author_id", // Edit optional query parameters here
-      "user.fields": "created_at", // Edit optional query parameters here
-    };
-  } else if (endpoint == "UserTimeline") {
-    endpointURL = `https://api.twitter.com/2/users/${userId}/tweets`;
-    hashUserId = false;
-    params = {
-      exclude: "retweets,replies",
-      start_time: startTime,
-      end_time: endTime,
-      "tweet.fields": "public_metrics",
-    };
-  } else if (endpoint == "Discord") {
+        callback(200, Requester.success(jobRunID, res.body));
+        return res.body;
+      }
+
+      const tweetArr = res.body.data.map((obj) => {
+        return obj;
+      });
+
+      const hashCheckPassed = hashCheck(
+        hashUserId,
+        userId,
+        tweetHash,
+        tweetArr
+      );
+
+      res.body.data.result = {
+        taskId: taskId,
+        hashCheckPassed: hashCheckPassed,
+        responseStatus: 1, // SUCCESS
+        status: res.body.data[0].public_metrics[metric],
+      };
+
+      res.body.status = 200;
+      callback(200, Requester.success(jobRunID, res.body));
+      return res.body;
+    } else {
+      callback(500, Requester.errored(jobRunID, error));
+    }
+  } else if (platform == "Discord") {
+    // This is hard coded to fetch all the guilds that the bot is in. Only used a proof of concept
     endpointURL = `${moralisServerUrl}/classes/Guild`;
-    const res = await needle("get", endpointURL, "", {
+    res = await needle("get", endpointURL, "", {
       headers: {
         "X-Parse-Application-Id": moralisAppId,
         "X-Parse-REST-API-Key": "undefined",
@@ -131,62 +158,6 @@ const createRequest = async (input, callback) => {
     });
 
     console.log("Moralis result:", res.body);
-  } else {
-    failedResult.data.result.message = "Wrong endpoint used";
-    callback(200, Requester.success(jobRunID, failedResult));
-    return failedResult;
-  }
-
-  // this is the HTTP header that adds bearer token authentication
-  const res = await needle("get", endpointURL, params, {
-    headers: {
-      authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (res.body) {
-    console.log("Resbody", res.body.data);
-    if (!res.body.data) {
-      res.body = {
-        status: 200,
-        data: {
-          result: {
-            taskId: taskId,
-            hashCheckPassed: false,
-            callSuccess: true,
-            message: "No tweets found",
-            likes: "",
-            retweets: "",
-            replies: "",
-          },
-        },
-      };
-
-      callback(200, Requester.success(jobRunID, res.body));
-      return res.body;
-    }
-
-    const tweetArr = res.body.data.map((obj) => {
-      return obj;
-    });
-
-    const hashCheckPassed = hashCheck(hashUserId, userId, tweetHash, tweetArr);
-
-    res.body.data.result = {
-      taskId: taskId,
-      hashCheckPassed: hashCheckPassed,
-      callSuccess: true,
-      message: "",
-      likes: res.body.data[0].public_metrics.like_count,
-      retweets: res.body.data[0].public_metrics.retweet_count,
-      replies: res.body.data[0].public_metrics.reply_count,
-    };
-
-    res.body.status = 200;
-    callback(200, Requester.success(jobRunID, res.body));
-    return res.body;
-  } else {
-    callback(500, Requester.errored(jobRunID, error));
   }
 };
 
