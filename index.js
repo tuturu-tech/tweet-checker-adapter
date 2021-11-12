@@ -5,6 +5,8 @@ const ethers = require("ethers");
 const needle = require("needle");
 
 const token = process.env.TWITTER_BEARER_TOKEN;
+const moralisAppId = process.env.MORALIS_APP_ID;
+const moralisServerUrl = process.env.MORALIS_SERVER_URL;
 
 //const endpointURL = "https://api.twitter.com/2/tweets?ids=";
 
@@ -91,6 +93,17 @@ const createRequest = async (input, callback) => {
     },
   };
 
+  if (endpoint == "Discord") {
+    const res = await needle("get", moralisServerUrl, {
+      headers: {
+        "X-Parse-Application-Id": moralisAppId,
+        "X-Parse-REST-API-Key": "undefined",
+      },
+    });
+
+    console.log("Moralis result:", res);
+  }
+
   if (endpoint == "TweetLookup") {
     endpointURL = `https://api.twitter.com/2/tweets?ids=`;
     hashUserId = true;
@@ -108,6 +121,16 @@ const createRequest = async (input, callback) => {
       end_time: endTime,
       "tweet.fields": "public_metrics",
     };
+  } else if (endpoint == "Discord") {
+    endpointURL = `${moralisServerUrl}/classes/Guild`;
+    const res = await needle("get", endpointURL, "", {
+      headers: {
+        "X-Parse-Application-Id": moralisAppId,
+        "X-Parse-REST-API-Key": "undefined",
+      },
+    });
+
+    console.log("Moralis result:", res.body);
   } else {
     failedResult.data.result.message = "Wrong endpoint used";
     callback(200, Requester.success(jobRunID, failedResult));

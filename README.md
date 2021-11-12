@@ -96,6 +96,13 @@ Task creation for testing purposes:
 
 Takes in a tweet id and fetches the tweet text and author username, hashes it and compares with inputed hash.
 
+curl -X GET \
+-H "X-Parse-Application-Id: BA88uLEec3A9iJPhlPKlX2KJmEu6KwAGFEwdVYEN" \
+-H "X-Parse-REST-API-Key: undefined" \
+https://5m0avaxluhbg.usemoralis.com:2053/server/classes/Guild
+
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"endpoint": "Discord" } }'
+
 {
 "promoterId": "1395461422121984004",
 "taskHash": "0xbe611fa9e3a341d1f59df049685fb42c9d7d2dadc0765019c5490335f21f9818"
