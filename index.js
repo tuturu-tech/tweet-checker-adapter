@@ -135,7 +135,7 @@ const createRequest = async (input, callback) => {
       res.body.data.result = {
         taskId: taskId,
         responseStatus: hashCheckPassed ? 1 : 0,
-        status: res.body.data[0].public_metrics[metric],
+        score: res.body.data[0].public_metrics[metric],
       };
 
       res.body.status = 200;
