@@ -70,7 +70,7 @@ const hashCheck = (
       }
     }
   }
-  if (isPublic) {
+  if (!isPublic) {
     return {
       taskId: taskId,
       responseStatus: matchingItemFound ? 1 : 0,
