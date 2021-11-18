@@ -1,16 +1,16 @@
 const ethers = require("ethers");
 
 // Needs to work with array of values!!
-const durationCheck = (duration, createdAt) => {
+const cliffCheck = (cliff, createdAt) => {
   const date = new Date(createdAt);
   const unixCreatedAt = Math.floor(date / 1000);
   const timeNow = Math.floor(Date.now() / 1000);
-  if (timeNow - unixCreatedAt >= duration) {
+  if (timeNow - unixCreatedAt >= cliff) {
     return true;
   } else false;
 };
 
-const durationValue = (duration, createdAt) => {
+const cliffValue = (cliff, createdAt) => {
   const date = new Date(createdAt);
   const unixCreatedAt = Math.floor(date / 1000);
   const timeNow = Math.floor(Date.now() / 1000);
@@ -22,12 +22,12 @@ const hashCheck = (
   userid,
   initialHash,
   tweetArray,
-  duration,
+  cliff,
   metricData,
   taskId
 ) => {
   let matchingItemFound = false;
-  let durationReached = false;
+  let cliffReached = false;
 
   if (!checkUsers) {
     for (let i = 0; i < tweetArray.length; i++) {
@@ -40,10 +40,10 @@ const hashCheck = (
         console.log("Item:", item.created_at);
         const createdAt = item.created_at;
         matchingItemFound = true;
-        if (durationCheck(duration, createdAt)) {
-          durationReached = true;
+        if (cliffCheck(cliff, createdAt)) {
+          cliffReached = true;
           if (metricData == "Time") {
-            metricData = durationValue(duration, createdAt);
+            metricData = cliffValue(cliff, createdAt);
           }
         }
         break;
@@ -59,10 +59,10 @@ const hashCheck = (
       if (initialHash == hashed) {
         const createdAt = item.created_at;
         matchingItemFound = true;
-        if (durationCheck(duration, createdAt)) {
-          durationReached = true;
+        if (cliffCheck(cliff, createdAt)) {
+          cliffReached = true;
           if (metricData == "Time") {
-            metricData = durationValue(duration, createdAt);
+            metricData = cliffValue(cliff, createdAt);
           }
         }
         break;
@@ -73,7 +73,7 @@ const hashCheck = (
   return {
     taskId: taskId,
     responseStatus: matchingItemFound ? 1 : 0,
-    score: durationReached ? metricData : 0,
+    score: cliffReached ? metricData : 0,
   };
 };
 

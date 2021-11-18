@@ -21,10 +21,9 @@ const customParams = {
   taskId: false,
   timeWindowStart: false,
   timeWindowEnd: false,
-  duration: false,
-  data: false,
-  endpoint: false,
-  promoterAddress: false,
+  cliff: false,
+  taskData: false,
+  userAddress: false,
   user_id: false,
 };
 
@@ -35,15 +34,15 @@ const unixToISO = (date) => {
 };
 
 // Needs to work with array of values!!
-const durationCheck = (duration, createdAt) => {
+const cliffCheck = (cliff, createdAt) => {
   const date = new Date(createdAt);
   console.log("date:", date);
   const unixCreatedAt = Math.floor(date / 1000);
   console.log("unix:", unixCreatedAt);
   const timeNow = Math.floor(Date.now() / 1000);
-  console.log("duration:", duration);
+  console.log("cliff:", cliff);
   console.log("minus", timeNow - unixCreatedAt);
-  if (timeNow - unixCreatedAt >= duration) {
+  if (timeNow - unixCreatedAt >= cliff) {
     return true;
   } else {
     return false;
@@ -64,9 +63,9 @@ const createRequest = async (input, callback) => {
     invalidResult;
   let calldone = false;
   const minAccountAge = 60 * 60 * 24 * 30;
-  const dataString = validator.validated.data.data;
-  const dataObject = validator.validated.data.data;
-  //const dataObject = JSON.parse(dataString);
+  const dataString = validator.validated.data.taskData;
+  //const dataObject = validator.validated.data.taskData; // For testing only
+  const dataObject = JSON.parse(dataString);
   const platform = dataObject.platform; // The platform we are checking on
   const metric = dataObject.metric; // The type of metric we're checking (likes, retweets, etc.)
   const endpoint = dataObject.endpoint;
@@ -82,7 +81,7 @@ const createRequest = async (input, callback) => {
   unixEndDate = validator.validated.data.timeWindowEnd || minStartTime;
   const startTime = unixToISO(unixStartDate);
   const endTime = unixToISO(unixEndDate);
-  const duration = validator.validated.data.vestingTerm || 60 * 60 * 24;
+  const cliff = validator.validated.data.cliff || 60 * 60 * 24;
 
   if (platform == "Twitter") {
     const tweetHash = dataObject.taskHash;
@@ -120,7 +119,7 @@ const createRequest = async (input, callback) => {
         "user.fields": "created_at", // Edit optional query parameters here
       };
     } else if (endpoint == "UserTimeline") {
-      userId = dataObject.promoterId;
+      userId = BigInt(dataObject.promoterId);
       endpointURL = `https://api.twitter.com/2/users/${userId}/tweets`;
       hashUserId = false;
       params = {
@@ -130,8 +129,9 @@ const createRequest = async (input, callback) => {
         "tweet.fields": "public_metrics,created_at",
       };
     } else if (endpoint == "Public") {
-      const userAddress = validator.validated.data.promoterAddress;
+      const userAddress = validator.validated.data.userAddress;
       userId = validator.validated.data.user_id;
+      console.log("User Address:", userAddress, "User id:", userId);
       endpointURL = `https://api.twitter.com/2/users/${userId}`;
       params = {
         "user.fields": "created_at,public_metrics,description",
@@ -143,7 +143,7 @@ const createRequest = async (input, callback) => {
         },
       });
 
-      const checkAccountAge = durationCheck(
+      const checkAccountAge = cliffCheck(
         minAccountAge,
         res.body.data.created_at
       );
@@ -201,7 +201,7 @@ const createRequest = async (input, callback) => {
         userId,
         tweetHash,
         tweetArr,
-        duration,
+        cliff,
         metric != "Time" ? res.body.data[0].public_metrics[metric] : "Time",
         taskId
       );
