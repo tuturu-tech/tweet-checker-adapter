@@ -60,7 +60,8 @@ const createRequest = async (input, callback) => {
     unixEndDate,
     res,
     failedResult,
-    invalidResult;
+    invalidResult,
+    isPublic;
   let calldone = false;
   const minAccountAge = 60 * 60 * 24 * 30;
   const dataString = validator.validated.data.taskData;
@@ -110,6 +111,7 @@ const createRequest = async (input, callback) => {
     };
 
     if (endpoint == "TweetLookup") {
+      isPublic = false;
       tweetIds = dataObject.tweetIds;
       endpointURL = `https://api.twitter.com/2/tweets?ids=`;
       hashUserId = true;
@@ -119,6 +121,7 @@ const createRequest = async (input, callback) => {
         "user.fields": "created_at", // Edit optional query parameters here
       };
     } else if (endpoint == "UserTimeline") {
+      isPublic = false;
       userId = BigInt(dataObject.promoterId);
       endpointURL = `https://api.twitter.com/2/users/${userId}/tweets`;
       hashUserId = false;
@@ -129,6 +132,7 @@ const createRequest = async (input, callback) => {
         "tweet.fields": "public_metrics,created_at",
       };
     } else if (endpoint == "Public") {
+      isPublic = true;
       const userAddress = validator.validated.data.userAddress;
       userId = validator.validated.data.user_id;
       console.log("User Address:", userAddress, "User id:", userId);
@@ -147,8 +151,12 @@ const createRequest = async (input, callback) => {
         minAccountAge,
         res.body.data.created_at
       );
-      console.log(checkAccountAge);
-      const bioArray = res.body.data.description.split(" ");
+
+      userId = res.body.data.id;
+
+      const bioArray = res.body.data.description
+        .split(" ")
+        .map((i) => i.toLowerCase());
       const accountBool = bioArray.includes(userAddress);
       console.log("BIO", bioArray);
       console.log("My account?", accountBool);
@@ -203,7 +211,8 @@ const createRequest = async (input, callback) => {
         tweetArr,
         cliff,
         metric != "Time" ? res.body.data[0].public_metrics[metric] : "Time",
-        taskId
+        taskId,
+        isPublic
       );
 
       res.body.status = 200;

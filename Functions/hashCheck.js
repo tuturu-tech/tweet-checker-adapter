@@ -24,7 +24,8 @@ const hashCheck = (
   tweetArray,
   cliff,
   metricData,
-  taskId
+  taskId,
+  isPublic
 ) => {
   let matchingItemFound = false;
   let cliffReached = false;
@@ -69,12 +70,20 @@ const hashCheck = (
       }
     }
   }
-
-  return {
-    taskId: taskId,
-    responseStatus: matchingItemFound ? 1 : 0,
-    score: cliffReached ? metricData : 0,
-  };
+  if (isPublic) {
+    return {
+      taskId: taskId,
+      responseStatus: matchingItemFound ? 1 : 0,
+      score: cliffReached ? metricData : 0,
+    };
+  } else {
+    return {
+      taskId: taskId,
+      userId: userid,
+      responseStatus: matchingItemFound ? 1 : 0,
+      score: cliffReached ? metricData : 0,
+    };
+  }
 };
 
 module.exports = hashCheck;
