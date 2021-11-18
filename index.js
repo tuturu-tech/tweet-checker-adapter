@@ -24,12 +24,30 @@ const customParams = {
   duration: false,
   data: false,
   endpoint: false,
+  promoterAddress: false,
+  user_id: false,
 };
 
 const unixToISO = (date) => {
   let unixDate = date;
   let newDate = new Date(unixDate * 1000);
   return newDate.toISOString().split(".")[0] + "Z";
+};
+
+// Needs to work with array of values!!
+const durationCheck = (duration, createdAt) => {
+  const date = new Date(createdAt);
+  console.log("date:", date);
+  const unixCreatedAt = Math.floor(date / 1000);
+  console.log("unix:", unixCreatedAt);
+  const timeNow = Math.floor(Date.now() / 1000);
+  console.log("duration:", duration);
+  console.log("minus", timeNow - unixCreatedAt);
+  if (timeNow - unixCreatedAt >= duration) {
+    return true;
+  } else {
+    return false;
+  }
 };
 
 const createRequest = async (input, callback) => {
@@ -42,10 +60,19 @@ const createRequest = async (input, callback) => {
     unixStartDate,
     unixEndDate,
     res,
-    failedResult;
+    failedResult,
+    invalidResult;
+  let calldone = false;
+  const minAccountAge = 60 * 60 * 24 * 30;
+  const dataString = validator.validated.data.data;
   const dataObject = validator.validated.data.data;
-  const platform = dataObject.platform;
-  const metric = dataObject.metric;
+  //const dataObject = JSON.parse(dataString);
+  const platform = dataObject.platform; // The platform we are checking on
+  const metric = dataObject.metric; // The type of metric we're checking (likes, retweets, etc.)
+  const endpoint = dataObject.endpoint;
+
+  console.log("Endpoint:", endpoint);
+  console.log("dataObject:", dataObject);
 
   // All tasks have these field in common
   const taskId = validator.validated.data.taskId;
@@ -55,7 +82,7 @@ const createRequest = async (input, callback) => {
   unixEndDate = validator.validated.data.timeWindowEnd || minStartTime;
   const startTime = unixToISO(unixStartDate);
   const endTime = unixToISO(unixEndDate);
-  const endpoint = validator.validated.data.endpoint;
+  const duration = validator.validated.data.vestingTerm || 60 * 60 * 24;
 
   if (platform == "Twitter") {
     const tweetHash = dataObject.taskHash;
@@ -67,7 +94,18 @@ const createRequest = async (input, callback) => {
         result: {
           taskId: taskId,
           responseStatus: 2, // Error
-          score: "",
+          score: 0,
+        },
+      },
+    };
+
+    invalidResult = {
+      status: 200,
+      data: {
+        result: {
+          taskId: taskId,
+          responseStatus: 1, // INVALID
+          score: 0,
         },
       },
     };
@@ -89,11 +127,55 @@ const createRequest = async (input, callback) => {
         exclude: "retweets,replies",
         start_time: startTime,
         end_time: endTime,
-        "tweet.fields": "public_metrics",
+        "tweet.fields": "public_metrics,created_at",
       };
+    } else if (endpoint == "Public") {
+      const userAddress = validator.validated.data.promoterAddress;
+      userId = validator.validated.data.user_id;
+      endpointURL = `https://api.twitter.com/2/users/${userId}`;
+      params = {
+        "user.fields": "created_at,public_metrics,description",
+      };
+
+      res = await needle("get", endpointURL, params, {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
+
+      const checkAccountAge = durationCheck(
+        minAccountAge,
+        res.body.data.created_at
+      );
+      console.log(checkAccountAge);
+      const bioArray = res.body.data.description.split(" ");
+      const accountBool = bioArray.includes(userAddress);
+      console.log("BIO", bioArray);
+      console.log("My account?", accountBool);
+
+      if (bioArray.includes(userAddress) && checkAccountAge) {
+        endpointURL = `https://api.twitter.com/2/users/${userId}/tweets`;
+        hashUserId = false;
+        params = {
+          exclude: "retweets,replies",
+          start_time: startTime,
+          end_time: endTime,
+          "tweet.fields": "public_metrics,created_at",
+        };
+      } else {
+        calldone = true;
+        callback(200, Requester.success(jobRunID, failedResult));
+        return failedResult;
+      }
     } else {
+      calldone = true;
       callback(200, Requester.success(jobRunID, failedResult));
       return failedResult;
+    }
+
+    if (calldone) {
+      calldone = false;
+      return;
     }
 
     // this is the HTTP header that adds bearer token authentication
@@ -106,37 +188,23 @@ const createRequest = async (input, callback) => {
     if (res.body) {
       console.log("Resbody", res.body.data);
       if (!res.body.data) {
-        res.body = {
-          status: 200,
-          data: {
-            result: {
-              taskId: taskId,
-              responseStatus: 0, // INVALID
-              score: "",
-            },
-          },
-        };
-
-        callback(200, Requester.success(jobRunID, res.body));
-        return res.body;
+        callback(200, Requester.success(jobRunID, invalidResult));
+        return invalidResult;
       }
 
       const tweetArr = res.body.data.map((obj) => {
         return obj;
       });
 
-      const hashCheckPassed = hashCheck(
+      res.body.data.result = hashCheck(
         hashUserId,
         userId,
         tweetHash,
-        tweetArr
+        tweetArr,
+        duration,
+        metric != "Time" ? res.body.data[0].public_metrics[metric] : "Time",
+        taskId
       );
-
-      res.body.data.result = {
-        taskId: taskId,
-        responseStatus: hashCheckPassed ? 1 : 0,
-        score: res.body.data[0].public_metrics[metric],
-      };
 
       res.body.status = 200;
       callback(200, Requester.success(jobRunID, res.body));
@@ -144,7 +212,7 @@ const createRequest = async (input, callback) => {
     } else {
       callback(500, Requester.errored(jobRunID, error));
     }
-  } else if (platform == "Discord") {
+  } /* else if (platform == "Discord") {
     // This is hard coded to fetch all the guilds that the bot is in. Only used a proof of concept
     endpointURL = `${moralisServerUrl}/classes/Guild`;
     res = await needle("get", endpointURL, "", {
@@ -155,7 +223,7 @@ const createRequest = async (input, callback) => {
     });
 
     console.log("Moralis result:", res.body);
-  }
+  }*/
 };
 
 // This is a wrapper to allow the function to work with
