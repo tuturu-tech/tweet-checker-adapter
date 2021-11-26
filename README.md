@@ -1,5 +1,7 @@
 ## Creating your own adapter from this
 
+Node address: 0x14e7b28E28a69955D5Cf3a68Eefa56FeA617ac1f
+
 Clone this repo and change "Tweet-EA" below to the name of your project
 
 ```bash

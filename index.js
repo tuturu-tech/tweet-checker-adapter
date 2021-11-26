@@ -122,6 +122,7 @@ const createRequest = async (input, callback) => {
       };
     } else if (endpoint == "UserTimeline") {
       isPublic = false;
+      console.log("Called UserTimeline");
       userId = BigInt(dataObject.promoterId);
       endpointURL = `https://api.twitter.com/2/users/${userId}/tweets`;
       hashUserId = false;
@@ -194,7 +195,7 @@ const createRequest = async (input, callback) => {
     });
 
     if (res.body) {
-      console.log("Resbody", res.body.data);
+      console.log("Resbody", res.body);
       if (!res.body.data) {
         callback(200, Requester.success(jobRunID, invalidResult));
         return invalidResult;
