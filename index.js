@@ -82,10 +82,10 @@ const createRequest = async (input, callback) => {
   unixEndDate = validator.validated.data.timeWindowEnd || minStartTime;
   const startTime = unixToISO(unixStartDate);
   const endTime = unixToISO(unixEndDate);
-  const cliff = validator.validated.data.cliff || 60 * 60 * 24;
+  const cliff = validator.validated.data.cliff || 0;
 
   if (platform == "Twitter") {
-    const tweetHash = dataObject.taskHash;
+    const tweetHash = dataObject.messageHash;
     let userId, tweetIds;
 
     failedResult = {
@@ -93,6 +93,7 @@ const createRequest = async (input, callback) => {
       data: {
         result: {
           taskId: taskId,
+          userId: "",
           responseStatus: 2, // Error
           score: 0,
         },
@@ -104,7 +105,8 @@ const createRequest = async (input, callback) => {
       data: {
         result: {
           taskId: taskId,
-          responseStatus: 1, // INVALID
+          userId: "",
+          responseStatus: 0, // INVALID
           score: 0,
         },
       },
@@ -123,7 +125,8 @@ const createRequest = async (input, callback) => {
     } else if (endpoint == "UserTimeline") {
       isPublic = false;
       console.log("Called UserTimeline");
-      userId = BigInt(dataObject.promoterId);
+      userId = dataObject.userId;
+      console.log("userId:", userId);
       endpointURL = `https://api.twitter.com/2/users/${userId}/tweets`;
       hashUserId = false;
       params = {
@@ -134,7 +137,7 @@ const createRequest = async (input, callback) => {
       };
     } else if (endpoint == "Public") {
       isPublic = true;
-      const userAddress = validator.validated.data.userAddress;
+      const userAddress = validator.validated.data.userAddress.toLowerCase();
       userId = validator.validated.data.user_id;
       console.log("User Address:", userAddress, "User id:", userId);
       endpointURL = `https://api.twitter.com/2/users/${userId}`;
@@ -217,6 +220,7 @@ const createRequest = async (input, callback) => {
       );
 
       res.body.status = 200;
+
       callback(200, Requester.success(jobRunID, res.body));
       return res.body;
     } else {
@@ -240,6 +244,7 @@ const createRequest = async (input, callback) => {
 // GCP Functions
 exports.gcpservice = (req, res) => {
   createRequest(req.body, (statusCode, data) => {
+    console.log(data);
     res.status(statusCode).send(data);
   });
 };

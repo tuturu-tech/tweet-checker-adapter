@@ -103,11 +103,13 @@ curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data 
 SUCCESS
 
 ```bash
-curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"taskId": "0", "timeWindowStart": "1634218319", "timeWindowEnd": "1638392085", "taskData": { "promoterId": "1395461422121984004","taskHash": "0x83da950bf0a928aed2c5167ac121d7d59ac9e0a0efa3f4e54ff94218ca6a6a8f", "platform": "Twitter", "metric": "like_count", "endpoint": "UserTimeline" } } }'
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"taskId": "0", "timeWindowStart": "1634218319", "timeWindowEnd": "1638392085", "taskData": { "promoterId": "1395461422121984004","taskHash": "0xdf3a181421f5b2c6fdbf6fb945da6d8d02d92c000d3c0fd7035ef6e140c47f11", "platform": "Twitter", "metric": "like_count", "endpoint": "UserTimeline" } } }'
 ```
 
+expected hash: 0xdf3a181421f5b2c6fdbf6fb945da6d8d02d92c000d3c0fd7035ef6e140c47f11
+
 ```bash
-curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"taskId": "0", "timeWindowStart": "1634218319", "timeWindowEnd": "1638392085", "taskData": {"taskHash": "0x83da950bf0a928aed2c5167ac121d7d59ac9e0a0efa3f4e54ff94218ca6a6a8f", "platform": "Twitter", "metric": "like_count", "endpoint": "Public" }, "userAddress": "0xB498e4A7E01ADbBfd5Ce0Ea5bC67eB208cd5f1dC", "user_id": "1395461422121984004"  } }'
+curl -X POST -H "content-type:application/json" "http://localhost:8080/" --data '{ "id": 0, "data": {"taskId": "0", "timeWindowStart": "1634218319", "timeWindowEnd": "1638392085", "taskData": {"taskHash": "0xdf3a181421f5b2c6fdbf6fb945da6d8d02d92c000d3c0fd7035ef6e140c47f11", "platform": "Twitter", "metric": "like_count", "endpoint": "Public" }, "userAddress": "0xB498e4A7E01ADbBfd5Ce0Ea5bC67eB208cd5f1dC", "user_id": "1395461422121984004"  } }'
 ```
 
 FAIL
